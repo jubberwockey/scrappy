@@ -12,6 +12,8 @@ from plotly.subplots import make_subplots
 from IPython.display import display
 import logging
 
+from .config import ScrapingConfig
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -41,118 +43,6 @@ class NetworkError(ScrapingError):
 class DataNotFoundError(ScrapingError):
     """Raised when requested data is not found."""
     pass
-
-
-# Configuration Management
-class ScrapingConfig:
-    """Configuration settings for the scraping operations."""
-    
-    # Default filter IDs for fund categories
-    DEFAULT_FILTER_IDS = [5634, 5703, 5582]  # Sustainability, Alternative Energy, Ecology
-    
-    # API endpoints
-    API_URLS = {
-        'fondsdiscount': 'https://www.fondsdiscount.de/themes/barcelona/content/module/chart/getChartData.php',
-        'onvista': 'https://api.onvista.de/api/v1/funds/finder/configuration_query'
-    }
-    
-    # Default parameters
-    DEFAULT_BATCH_SIZE = 100
-    DEFAULT_LIMIT = 100
-    MAX_API_LIMIT = 1000
-    
-    # Column mappings for onvista API
-    ONVISTA_COLUMNS = {
-        'instrument.name': 'name',
-        'instrument.entitySubType': 'type',
-        'fundsDetails.nameInvestmentFocus': 'investment_focus',
-        'fundsDetails.fundsInvestmentRegion.name': 'region',
-        'issuer.nameGroupIssuer': 'issuer',
-        'benchmark.instrument.name': 'benchmark',
-        'instrument.isin': 'isin',
-        'fundsBaseData.nameCountry': 'country',
-        'fundsBaseData.isoCurrencyFund': 'currency',
-        'fundsBaseData.volumeFund': 'volume',
-        'fundsDetails.fundsTypeCapitalisation.name': 'fund_type',
-        'fundsBaseData.maxPctInitialFee': 'initial_fee',
-        'fundsBaseData.ongoingCharges': 'TER',
-        'fundsEvaluation.morningstarRating': 'morningstar',
-        'fundsEvaluation.morningstarRating3y': 'morningstar_3y',
-        'fundsEvaluation.morningstarRating5y': 'morningstar_5y',
-        'fundsEvaluation.feriRating': 'feri',
-        'fundsEvaluation.riskClass': 'risk_class',
-        'fundsPerformanceList.list': 'performance',
-        'fundsRiskList.list': 'risk',
-        'instrument.wkn': 'wkn',
-        'fundsBaseData.allInFee': 'all_in_fee',
-        'fundsBaseData.isoCurrencyFees': 'currency_fee',
-        'fundsBaseData.custodianBankFeePct': 'depot_bank_fee',
-        'fundsBaseData.switchingFee': 'switching_fee',
-        'fundsBaseData.maxPctDistributionFee': 'distribution_fee',
-        'fundsBaseData.maxPctRedemptionFee': 'redemption_fee',
-        'fundsBaseData.minInitialInvestment': 'min_initial_investment',
-        'fundsBaseData.minFollowupInvestment': 'min_followup_investment'
-    }
-    
-    # Default benchmark ISINs
-    DEFAULT_BENCHMARKS = [
-        'IE00B5BMR087',  # iShares Core S&P 500 UCITS ETF
-        'DE000A0F5UF5',  # iShares STOXX Europe 600 UCITS ETF
-        'IE0005042456',  # iShares MSCI EM UCITS ETF
-        'DE0006289390',  # iShares MSCI Japan UCITS ETF
-        'DE0005933931',  # iShares Core DAX UCITS ETF
-        'LU0340285161'   # Xtrackers MSCI World UCITS ETF
-    ]
-    
-    # HTTP headers for different APIs
-    FONDSDISCOUNT_HEADERS = {
-        'Host': 'www.fondsdiscount.de',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
-        'Accept': '*/*',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Content-Length': '68',
-        'Origin': 'https://www.fondsdiscount.de',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Referer': '',
-        'Cookie': '',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-origin',
-        'Pragma': 'no-cache',
-        'Cache-Control': 'no-cache',
-        'TE': 'trailers',
-    }
-    
-    ONVISTA_HEADERS = {
-        'Host': 'api.onvista.de',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
-        'Accept': 'application/json',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Content-Type': 'application/json',
-        'Origin': 'https://www.onvista.de',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Pragma': 'no-cache',
-        'Cache-Control': 'no-cache',
-        'TE': 'Trailers',
-    }
-    
-    # Data template for fondsdiscount API
-    FONDSDISCOUNT_DATA_TEMPLATE = {
-        'function': 'getMultiChartIsin',
-        'isin': 'DE000A0KEYM4',
-        'fondsname': '',
-        'range': '4',
-        'org_currency': 'true',
-        'charttyp': 'p',
-        'maxNameLength': '40',
-        'chart': 'chart_p',
-    }
 
 
 class DataScraper:
@@ -214,7 +104,35 @@ class DataScraper:
     def download_funds_overview(self, filter_ids: Optional[List[int]] = None, 
                              etf: bool = False, benchmark: bool = False, 
                              limit: int = None) -> pd.DataFrame:
-        """Download funds overview data from onvista website."""
+        """
+        Download funds overview data from the Onvista website.
+
+        This function retrieves a data for funds based on specified filter criteria, 
+        including sustainability categories, ETF status, and benchmark inclusion. 
+        It pre-filters to investments with Ausgabeaufschlag < 7% and min investment < 10k.
+
+        Parameters:
+        ----------
+        filter_ids : list of int, optional
+            A list of filter IDs (onvista "Thema" filter) to specify categories of funds to download. 
+            If None, defaults to the predefined filter IDs (sustainability, alternative energy, ecology).
+
+        etf : bool, default=False
+            If True, only includes funds that are exchange-traded funds (ETFs).
+
+        benchmark : bool, default=False
+            If True, only includes funds that are benchmarks.
+
+        limit : int, optional
+            The maximum number of funds to return. If None, defaults to 100.
+            If >1000, splits requests by Ausgabeaufschlag (not ideal).
+
+        Returns:
+        -------
+        pandas.DataFrame
+            A DataFrame containing the downloaded funds data, including relevant columns 
+            such as fund names, ISINs, TER (Total Expense Ratio), and other performance metrics.
+        """
         if filter_ids is None:
             filter_ids = self.config.DEFAULT_FILTER_IDS
         if limit is None:
@@ -511,31 +429,125 @@ class FundsDataManager:
         self.funds_overview = self.funds_overview.drop(
             columns=['finanzen_zero', 'sparplan_finanzen_zero'], errors='ignore'
         ).join(df, how='left')
-        self.funds_overview['finanzen_zero'] = self.funds_overview['finanzen_zero'].fillna(False).infer_objects(copy=False)
+        self.funds_overview['finanzen_zero'] = self.funds_overview['finanzen_zero'].fillna(False)
     
-    def filter_funds(self, filter_lst: Optional[Union[str, List[str]]] = None, 
-                    column: str = 'index', from_isins: Optional[List[str]] = None) -> pd.DataFrame:
-        """Select funds based on filters."""
-        if from_isins is None:
-            funds = self.funds_overview
-        else:
-            funds = self.funds_overview.loc[from_isins]
+    def filter_funds(self, conditions: Optional[Dict[str, Any]] = None, 
+                    isins: Optional[List[str]] = None) -> pd.DataFrame:
+        """
+        Filter funds based on multiple conditions with support for regex patterns.
         
-        if filter_lst is None:
+        Parameters
+        ----------
+        conditions : dict, optional
+            Dictionary where keys are column names and values are conditions:
+            - List: filters using isin() (e.g., ['US', 'EU'])  
+            - String with operator: mathematical condition (e.g., '<5', '>=10', '==True')
+            - String with 'regex:' prefix: regex pattern (e.g., 'regex:ESG|Sustainable')
+            - Direct value: equality filter
+            - For index column, use 'index' as key for ISIN filterig
+            Example: {'TER': '<1.0', 'name': 'regex:ESG|Sustainable', 'region': ['Europe', 'USA']}
+        
+        isins : list of str, optional
+            Initial list of ISINs to filter from before applying conditions
+            
+        Returns
+        -------
+        pandas.DataFrame
+            Filtered funds dataframe
+        """
+        # Start with base dataset
+        if isins is None:
+            funds = self.funds_overview.copy()
+        else:
+            # Filter to only include the specified ISINs
+            available_isins = self.funds_overview.index.intersection(isins)
+            if len(available_isins) < len(isins):
+                missing = set(isins) - set(available_isins)
+                logger.warning(f"ISINs not found: {missing}")
+            funds = self.funds_overview.loc[available_isins].copy()
+        
+        # Return early if no conditions specified
+        if conditions is None:
             return funds
         
-        if isinstance(filter_lst, str):
-            filter_lst = [filter_lst]
+        # Apply each condition consecutively
+        for column, condition in conditions.items():
+            if column not in funds.columns:
+                logger.warning(f"Column '{column}' not found in funds data")
+                continue
+                
+            # Handle different condition types
+            if isinstance(condition, list):
+                # List condition: use isin()
+                mask = funds[column].isin(condition)
+                
+            elif isinstance(condition, str) and condition.startswith('regex:'):
+                # Regex condition: extract pattern and apply
+                regex_pattern = condition[6:]  # Remove 'regex:' prefix
+                try:
+                    mask = funds[column].str.contains(regex_pattern, regex=True, na=False)
+                except Exception as e:
+                    logger.warning(f"Invalid regex pattern '{regex_pattern}' for column '{column}': {e}")
+                    continue
+                    
+            elif isinstance(condition, str) and any(condition.startswith(op) for op in ['<', '>', '=', '!']):
+                # Mathematical condition: parse operator and value
+                if condition.startswith('<='):
+                    op, value = '<=', condition[2:]
+                elif condition.startswith('>='):
+                    op, value = '>=', condition[2:]
+                elif condition.startswith('!='):
+                    op, value = '!=', condition[2:]
+                elif condition.startswith('=='):
+                    op, value = '==', condition[2:]
+                elif condition.startswith('<'):
+                    op, value = '<', condition[1:]
+                elif condition.startswith('>'):
+                    op, value = '>', condition[1:]
+                elif condition.startswith('='):
+                    op, value = '==', condition[1:]
+                else:
+                    logger.warning(f"Unrecognized operator in condition: {condition}")
+                    continue
+                
+                # Convert value to appropriate type
+                try:
+                    # Try to convert to float first
+                    if '.' in value or 'e' in value.lower():
+                        parsed_value = float(value)
+                    elif value.lower() in ['true', 'false']:
+                        parsed_value = value.lower() == 'true'
+                    elif value.isdigit() or (value.startswith('-') and value[1:].isdigit()):
+                        parsed_value = int(value)
+                    else:
+                        parsed_value = value  # Keep as string
+                        
+                except ValueError:
+                    parsed_value = value  # Fallback to string
+                
+                # Apply condition
+                if op == '<':
+                    mask = funds[column] < parsed_value
+                elif op == '<=':
+                    mask = funds[column] <= parsed_value
+                elif op == '>':
+                    mask = funds[column] > parsed_value
+                elif op == '>=':
+                    mask = funds[column] >= parsed_value
+                elif op == '==':
+                    mask = funds[column] == parsed_value
+                elif op == '!=':
+                    mask = funds[column] != parsed_value
+                    
+            else:
+                # Direct value: equality filter
+                mask = funds[column] == condition
+            
+            # Apply the mask
+            funds = funds[mask]
+            logger.info(f"After filtering {column} with {condition}: {len(funds)} funds remaining")
         
-        if column == 'index':
-            try:
-                return funds.loc[filter_lst]
-            except KeyError:
-                skipped = list(set(filter_lst) - set(funds.index))
-                logger.warning(f"Not found: {skipped}")
-                return funds.loc[funds.index.intersection(filter_lst)]
-        else:
-            return funds[funds[column].isin(filter_lst)]
+        return funds
     
     def search_funds_by_pattern(self, regex_str: str, column: str = 'index') -> pd.DataFrame:
         """Search funds using regex."""
@@ -559,7 +571,7 @@ class FundsDataManager:
         dfs = []
         
         for isin in isins:
-            fund = self.filter_funds(isin)
+            fund = self.filter_funds(isins=[isin])
             if len(fund) > 0:
                 subdfs = [pd.DataFrame(fund.loc[isin, c]).set_index('timeSpan') for c in columns]
                 if merge:
@@ -662,31 +674,7 @@ class FundsAnalyzer:
                 'TER': -0.5
             }
         }
-    
-    def filter_top_performers(self, isins: Optional[List[str]] = None, 
-                            by: str = 'sharpeRatio', timespan: str = '1Y', 
-                            limit: int = 50) -> pd.DataFrame:
-        """Select top performing funds based on specified metric."""
-        def order_columns(cols, order):
-            correspondence = {i: n for n, i in enumerate(order)}
-            return cols.map(correspondence)
-        
-        ascending = by == 'volatility'
-        
-        if self.data_manager.performance is None:
-            logger.error("No performance data available")
-            return pd.DataFrame()
-        
-        available_isins = self.data_manager.filter_funds(isins).index
-        top_perf = (self.data_manager.performance.loc[available_isins]
-                   .xs(timespan, level='timeSpan')
-                   .sort_values(by=by, ascending=ascending)
-                   .head(limit))
-        
-        display(top_perf)
-        
-        return (self.data_manager.filter_funds(top_perf.index)
-               .sort_index(key=lambda c: order_columns(c, top_perf.index)))
+
     
     def calculate_risk_return_metrics(self, timespan: str = '1Y', 
                                     isins: Optional[List[str]] = None) -> pd.DataFrame:
@@ -694,7 +682,7 @@ class FundsAnalyzer:
         if isins is None:
             funds_df = self.data_manager.funds_overview
         else:
-            funds_df = self.data_manager.filter_funds(isins)
+            funds_df = self.data_manager.filter_funds(isins=isins)
         
         if funds_df.empty:
             logger.warning("No fund data available for analysis.")
@@ -858,7 +846,7 @@ class FundsAnalyzer:
         return result_df
 
     def rank_funds(self, criteria: Optional[Dict[str, float]] = None, 
-                   timespan: str = '1Y', sparplan_only: bool = True, 
+                   timespan: str = '1Y', isins: Optional[List[str]] = None, 
                    limit: int = 10) -> pd.DataFrame:
         """
         Rank funds based on different performance and risk criteria.
@@ -873,9 +861,9 @@ class FundsAnalyzer:
         
         timespan : str, default='1Y'
             Time period for evaluation ('1M', '3M', '1Y', '3Y', '5Y', '10Y')
-        
-        sparplan_only : bool, default=True
-            If True, only include funds with sparplan_finanzen_zero = True
+            
+        isins : list of str, optional
+            List of ISINs to limit ranking to. If provided, only these funds will be ranked.
         
         limit : int, default=10
             Maximum number of top-ranked funds to return
@@ -890,11 +878,12 @@ class FundsAnalyzer:
             criteria = self.strategies['balanced'].copy()
             logger.info("Using default balanced criteria for ranking")
         
-        # Filter funds with savings plan if required
-        if sparplan_only and 'sparplan_finanzen_zero' in self.data_manager.funds_overview.columns:
-            funds_df = self.data_manager.funds_overview[
-                self.data_manager.funds_overview['sparplan_finanzen_zero'] == True
-            ].copy()
+        # Start with specified ISINs or all funds
+        if isins is not None:
+            funds_df = self.data_manager.filter_funds(isins=isins)
+            if funds_df.empty:
+                logger.warning("No valid ISINs found for ranking")
+                return pd.DataFrame()
         else:
             funds_df = self.data_manager.funds_overview.copy()
         
@@ -925,7 +914,8 @@ class FundsAnalyzer:
         return result_df[columns_to_include]
         
     def rank_funds_by_strategy(self, strategy: str, timespan: str = '3Y', 
-                              sparplan_only: bool = True, limit: int = 10) -> pd.DataFrame:
+                              isins: Optional[List[str]] = None, 
+                              limit: int = 10) -> pd.DataFrame:
         """
         Rank funds using predefined investment strategies.
         
@@ -935,8 +925,8 @@ class FundsAnalyzer:
             Strategy name ('balanced', 'growth', 'conservative', 'long_term', 'short_term')
         timespan : str, default='3Y'
             Time period for evaluation
-        sparplan_only : bool, default=True
-            If True, only include funds with savings plan availability
+        isins : list of str, optional
+            List of ISINs to limit ranking to. If provided, only these funds will be ranked.
         limit : int, default=10
             Maximum number of top-ranked funds to return
         
@@ -966,7 +956,7 @@ class FundsAnalyzer:
         return self.rank_funds(
             criteria=criteria,
             timespan=timespan,
-            sparplan_only=sparplan_only,
+            isins=isins,
             limit=limit
         )
 
@@ -1345,43 +1335,6 @@ class Scrappy:
     def rank_funds_by_strategy(self, *args, **kwargs):
         """Rank funds using predefined investment strategies."""
         return self.analyzer.rank_funds_by_strategy(*args, **kwargs)
-    
-    # Backward compatibility aliases (deprecated)
-    def search_funds(self, *args, **kwargs):
-        """Deprecated: Use search_funds_by_pattern instead."""
-        logger.warning("search_funds is deprecated, use search_funds_by_pattern")
-        return self.search_funds_by_pattern(*args, **kwargs)
-    
-    def select_funds(self, *args, **kwargs):
-        """Deprecated: Use filter_funds_by_criteria instead."""
-        logger.warning("select_funds is deprecated, use filter_funds")
-        return self.filter_funds(*args, **kwargs)
-    
-    def get_search_results(self, *args, **kwargs):
-        """Deprecated: Use download_funds_overview_data instead."""
-        logger.warning("get_search_results is deprecated, use download_funds_overview_data")
-        return self.download_funds_overview_data(*args, **kwargs)
-    
-    def get_timeseries(self, *args, **kwargs):
-        """Deprecated: Use download_timeseries instead."""
-        logger.warning("get_timeseries is deprecated, use download_timeseries")
-        return self.download_timeseries(*args, **kwargs)
-    
-    def get_performance(self, *args, **kwargs):
-        """Deprecated: Use extract_performance_metrics instead."""
-        logger.warning("get_performance is deprecated, use extract_performance")
-        return self.extract_performance(*args, **kwargs)
-    
-    def select_perf(self, *args, **kwargs):
-        """Deprecated: Use filter_top_performers instead."""
-        logger.warning("select_perf is deprecated, use filter_top_performers")
-        return self.filter_top_performers(*args, **kwargs)
-    
-    def plot_ts(self, *args, **kwargs):
-        """Deprecated: Use plot_timeseries instead."""
-        logger.warning("plot_ts is deprecated, use plot_timeseries")
-        return self.plot_timeseries(*args, **kwargs)
-    
     
     # Properties for backward compatibility
     @property

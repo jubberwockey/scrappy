@@ -358,6 +358,94 @@ def main():
         # Data management
         data_management_example(scrappy)
         
+        # Example usage of new filter_funds function with dictionary conditions
+        print("=== New filter_funds Function Examples ===")
+
+        # Example 1: Filter by multiple conditions including regex
+        conditions = {
+            'TER': '<1.0',                           # TER less than 1.0%
+            'name': 'regex:ESG|Sustainable|Green',   # Names containing ESG, Sustainable, or Green
+            'region': ['Europe', 'USA', 'World']    # From specific regions
+        }
+        filtered_funds = scrappy.filter_funds(conditions)
+        print(f"Funds matching all conditions: {len(filtered_funds)}")
+
+        # Example 2: Consecutive filtering - start with low fees, then filter performance
+        low_fee_funds = scrappy.filter_funds({'TER': '<=0.5'})
+        print(f"Low fee funds (TER <= 0.5%): {len(low_fee_funds)}")
+
+        # Then filter among those for high performance (if performance data available)
+        high_perf_low_fee = scrappy.filter_funds(
+            conditions={'volume': '>100000000'},  # Volume > 100M
+            isins=list(low_fee_funds.index)
+        )
+        print(f"High volume, low fee funds: {len(high_perf_low_fee)}")
+
+        # Example 3: Filter by ISIN patterns using regex
+        isin_pattern_funds = scrappy.filter_funds({
+            'index': 'regex:^DE000.*',  # German ISINs
+            'TER': '<0.8'
+        })
+        print(f"German funds with low TER: {len(isin_pattern_funds)}")
+
+        # Example 4: Ranking with specific ISINs only
+        print("\n=== New Ranking Function Examples ===")
+
+        # Get a subset of funds first - no more sparplan_only parameter needed
+        subset_conditions = {
+            'TER': '<0.8',
+            'name': 'regex:Index|ETF'  # Focus on index funds/ETFs
+        }
+        subset_funds = scrappy.filter_funds(subset_conditions)
+        subset_isins = list(subset_funds.index[:20])  # Take first 20
+
+        print(f"Ranking among {len(subset_isins)} pre-filtered funds:")
+
+        # Rank only among these specific ISINs
+        top_ranked = scrappy.rank_funds(
+            isins=subset_isins,
+            timespan='1Y',
+            limit=5
+        )
+        print("Top 5 funds from subset:")
+        print(top_ranked)
+
+        # Use strategy-based ranking with ISIN filter
+        growth_strategy_subset = scrappy.rank_funds_by_strategy(
+            strategy='growth',
+            isins=subset_isins,
+            timespan='1Y',
+            limit=3
+        )
+        print("\nTop 3 growth strategy funds from subset:")
+        print(growth_strategy_subset)
+
+        # Example 5: filter_top_performers vs rank_funds comparison
+        print("\n=== filter_top_performers vs rank_funds ===")
+        
+        # Use filter_top_performers for quick screening
+        print("Quick screening with filter_top_performers:")
+        top_performers = scrappy.filter_top_performers(
+            isins=subset_isins,
+            by='sharpeRatio',
+            limit=10
+        )
+        print(f"Found {len(top_performers)} top performers")
+        
+        # Then use rank_funds for sophisticated multi-criteria ranking
+        print("\nSophisticated ranking with rank_funds:")
+        sophisticated_ranking = scrappy.rank_funds(
+            isins=list(top_performers.index),  # Use top performers as input
+            criteria={
+                'sharpeRatio': 2.0,      # High weight on risk-adjusted returns
+                'TER': -1.5,             # Penalize high fees
+                'volatility': -0.8       # Penalize high volatility
+            },
+            limit=5
+        )
+        print("Multi-criteria ranking results:")
+        print(sophisticated_ranking)
+        
         print("\n" + "=" * 50)
         print("All examples completed successfully!")
         print("Check the 'output' directory for saved files.")
