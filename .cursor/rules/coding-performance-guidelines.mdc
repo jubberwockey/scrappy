@@ -1,0 +1,27 @@
+---
+description: USE WHEN optimizing code for performance
+globs: 
+alwaysApply: false
+---
+tags: development
+priority: 2
+version: 1.0.0
+
+# Coding Guidelines for Performance
+
+<purpose>
+Follow these guidelines when optimizing for performance
+</purpose>
+
+### 2.4 Performance
+
+71. **Measure before optimizing**—use profilers.
+72. **Know your bottlenecks**—optimize only where needed.
+73. **Use efficient data structures and algorithms**.
+74. **Avoid unnecessary allocations and copying**.
+75. **Cache expensive computations when appropriate**.
+76. **Use lazy evaluation where possible**.
+77. **Parallelize or batch operations to increase throughput**.
+78. **Minimize I/O operations and network latency**.
+79. **Tune SQL queries and indexes** for DB performance.
+80. **Balance readability with performance**—don't sacrifice maintainability.

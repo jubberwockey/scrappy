@@ -1,0 +1,56 @@
+---
+description: USE WHEN developing machine learning models
+globs: 
+alwaysApply: false
+---
+tags: development
+priority: 2
+version: 1.0.0
+
+# Coding Guidelines: Machine Learning
+
+<purpose>
+Follow these guidelines when developing machine learning and data science products.
+</purpose>
+
+
+## 5. Data & AI Lifecycle
+
+### 5.1 Dataset Creation & Management
+
+201. **Label with clear, consistent guidelines**—avoid ambiguity.
+202. **Automate data cleaning and validation** with reproducible scripts.
+203. **Balance classes to avoid bias** (or account for imbalance explicitly).
+204. **Use stratified sampling for splits** when labels are imbalanced.
+205. **Track data provenance**—source, date, version.
+206. **Anonymize sensitive information where applicable**.
+207. **Augment data thoughtfully—avoid introducing noise**.
+208. **Use data versioning tools** (e.g., DVC, Quilt, lakeFS).
+209. **Ensure real-world diversity is captured in samples**.
+210. **Document data assumptions and limitations**.
+
+### 5.2 Model Training & Tuning
+
+211. **Use grid or random search for small spaces**.
+212. **Use Bayesian optimization or Optuna for larger spaces**.
+213. **Tune only after baseline model is stable**.
+214. **Use early stopping to avoid overfitting**.
+215. **Log hyperparameters and results systematically**.
+216. **Prioritize interpretability vs. performance consciously**.
+217. **Quantize models for deployment if latency or size is critical**.
+218. **Prune or distill large models for efficiency**.
+219. **Experiment on subsets before scaling up**.
+220. **Regularize carefully—monitor bias/variance tradeoff**.
+
+### 5.3 Model Evaluation & Fairness
+
+221. **Choose metrics appropriate to the task** (e.g., F1 for imbalance).
+222. **Use ROC, PR curves, and confusion matrices to analyze performance**.
+223. **Evaluate per group or segment** to uncover bias.
+224. **Run ablation studies to understand component contributions**.
+225. **Benchmark against simple, interpretable baselines**.
+226. **Use human-in-the-loop review for critical outputs**.
+227. **Test for stability—minor input changes shouldn't cause major shifts**.
+228. **Track performance across versions and time**.
+229. **Automate evaluation as part of CI/CD pipeline**.
+230. **Simulate edge cases and adversarial inputs explicitly**.

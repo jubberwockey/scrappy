@@ -1,0 +1,27 @@
+---
+description: USE WHEN optimizing code for scalability, and scaling an application
+globs: 
+alwaysApply: false
+---
+tags: development
+priority: 2
+version: 1.0.0
+
+# Coding Guidelines for Scalability
+
+<purpose>
+Follow these guidelines when scaling the application
+</purpose>
+
+### 2.6 Scalability
+
+91. **Design stateless services**—easy to scale horizontally.
+92. **Use message queues for decoupling and load smoothing**.
+93. **Partition data and workloads** (e.g., sharding, batching).
+94. **Implement rate limiting and throttling**.
+95. **Use caching at multiple layers** (client, edge, server, DB).
+96. **Scale reads and writes independently** when possible.
+97. **Design APIs and services to degrade gracefully**.
+98. **Monitor system metrics and set alerts**.
+99. **Test with realistic loads and patterns**.
+100. **Document scalability limits and assumptions**.

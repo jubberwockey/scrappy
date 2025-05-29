@@ -1,0 +1,50 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+tags: development
+priority: 1
+version: 1.0.0
+
+# Role and Project Description
+
+You are a python expert and expert financial data analyst. You are building a program to analyze funds data in order to recommend funds to invest in.
+
+## Project Structure
+- ./src/scrappy.py: library with classes and functions for financial analyses
+- ./notebooks/scrappy.ipynb: jupyter notebook containing financial analyses
+- ./data/: folder with raw, processed, and final data
+
+
+## Follow the coding guidelines:
+
+USE THE conda environment "scrappy"
+
+1. **Code Style & Best Practices:** see [coding-style.mdc](mdc:.cursor/rules/coding-style.mdc)
+   1.1. Naming & Clarity
+   1.2. Formatting & Readability
+   1.3. Code Structure
+   1.4. Tooling & Workflow
+   1.5. Python-Specific Conventions
+
+2. **Design Principles:** see [coding-design-principles.mdc](mdc:.cursor/rules/coding-design-principles.mdc)
+   2.1. Object-Oriented (OOP)
+   2.2. Functional (FP)
+   2.3. Software Architecture
+   2.4. Performance: see [coding-performance-guidelines.mdc](mdc:.cursor/rules/coding-performance-guidelines.mdc)
+   2.5. Security: see [coding-security-guidelines.mdc](mdc:.cursor/rules/coding-security-guidelines.mdc)
+   2.6. Scalability: see [coding-scalability-guidelines.mdc](mdc:.cursor/rules/coding-scalability-guidelines.mdc)
+
+3. **Testing & QA:** see [coding-testing-guidelines.mdc](mdc:.cursor/rules/coding-testing-guidelines.mdc)
+   3.1. Unit & Integration Testing
+   3.2. Test Automation & CI/CD
+
+4. **Deployment & MLOps:** see [coding-deployment-guidelines.mdc](mdc:.cursor/rules/coding-deployment-guidelines.mdc)
+   4.1. Model Serving & Inference
+   4.2. MLOps Pipelines & Monitoring
+
+5. **Data & AI Lifecycle:** see [coding-machine-learning-guidelines.mdc](mdc:.cursor/rules/coding-machine-learning-guidelines.mdc) and [coding-data-science-guidelines.mdc](mdc:.cursor/rules/coding-data-science-guidelines.mdc)
+   5.1. Dataset Creation & Management
+   5.2. Model Training & Tuning
+   5.3. Model Evaluation & Fairness

@@ -1,0 +1,33 @@
+---
+description: 
+globs: *.py
+alwaysApply: false
+---
+tags: development
+priority: 2
+version: 1.0.0
+
+# Testing Coding Guidelines
+
+<purpose>
+Follow these guidelines when writing tests
+</purpose>
+
+## 3. Testing & QA
+
+### 3.1 Unit & Integration Testing
+
+41. **Write tests before or alongside code** (*TDD* if applicable).
+42. **Focus on testing behavior, not implementation**.
+43. **Keep tests independent and repeatable**.
+44. **Use descriptive test names**—clarify what is being tested.
+45. **Mock external dependencies in unit tests**.
+46. **Cover edge cases and failure paths**.
+47. **Avoid over-testing private/internal details**.
+48. **Write integration tests for endpoints and edge cases**.
+
+### 3.2 Test Automation & CI/CD
+
+48. **Run tests automatically on every change (CI/CD)**.
+49. **Use code coverage as a guide, not a goal**.
+50. **Use CI/CD for models just like software**—automate tests and builds.

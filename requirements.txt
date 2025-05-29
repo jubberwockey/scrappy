@@ -1,5 +1,8 @@
 jupyter
 requests
+numpy
 pandas
-plotly
 dirtyjson
+plotly
+matplotlib
+seaborn

@@ -1,0 +1,59 @@
+---
+description: 
+globs: *.py
+alwaysApply: false
+---
+tags: development
+priority: 2
+version: 1.0.0
+
+# Software Architecture Coding Guidelines
+
+<purpose>
+Follow these guidelines when programming the final product
+</purpose>
+
+## 2. Design Principles
+
+### 2.1 Object-Oriented (OOP)
+
+31. **Favor encapsulation**—keep data and methods that operate on it together.
+32. **Use interfaces/abstract classes to define contracts**.
+33. **Keep classes small and focused**—*Single Responsibility Principle*.
+34. **Prefer delegation over inheritance** for flexibility.
+35. **Respect the Liskov Substitution Principle**—subtypes must be usable in place of supertypes.
+36. **Use polymorphism to simplify conditionals**.
+37. **Avoid deep inheritance hierarchies**—favor flat, composable structures.
+38. **Hide implementation details**—expose minimal public API.
+39. **Ensure object state is always valid after construction**.
+40. **Don't abuse getters/setters**—maintain encapsulation.
+
+### 2.2 Functional (FP)
+
+51. **Prefer pure functions**—no side effects, same output for same input.
+52. **Use higher-order functions** to abstract patterns (e.g., `map`, `filter`, `reduce`).
+53. **Favor immutability**—avoid changing state.
+54. **Avoid shared mutable state**—use data flow instead.
+55. **Compose functions**—build complex behavior from simple parts.
+56. **Use recursion over loops** (where appropriate).
+57. **Treat functions as first-class citizens**—pass, return, store them.
+58. **Leverage pattern matching** (if supported) for clean control flow.
+59. **Model data with algebraic types**—sum/product types.
+60. **Minimize side effects and isolate them**.
+
+### 2.3 Software Architecture
+
+61. **Design for change**—anticipate evolution.
+62. **Use layered architecture**—separate UI, logic, and data.
+63. **Apply SOLID principles** to guide class/module design.
+64. **Use dependency injection** to decouple components.
+65. **Keep boundaries clear between modules/services**.
+66. **Use APIs/contracts for inter-service communication**.
+67. **Design for failure**—especially in distributed systems.
+68. **Document system architecture**—diagrams + rationale.
+69. **Keep architecture simple until complexity is justified**.
+70. **Review and evolve architecture periodically**.
+
+
+
+

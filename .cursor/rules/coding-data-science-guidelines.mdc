@@ -1,0 +1,25 @@
+---
+description: 
+globs: *.ipynb
+alwaysApply: false
+---
+tags: development
+priority: 2
+version: 1.0.0
+
+# Data Science Guidelines (Python):
+
+<purpose>
+Follow all of these guidelines when programming in jupyter notebooks, doing exploratory analyses, and data science
+</purpose>
+
+141. **Use `pandas` and `numpy` idiomatically—avoid loops**.
+142. **Use vectorized operations for performance**.
+143. **Keep notebooks clean—modularize logic in scripts**.
+144. **Use environment management (e.g., conda) for reproducibility**.
+145. **Track experiments with tools like MLflow or Weights & Biases**.
+146. **Use `.loc`/`.iloc` correctly—know the difference**.
+147. **Profile memory with `memory_profiler` for large datasets**.
+148. **Document data transformations clearly**.
+149. **Use `scikit-learn` pipelines for clean modeling workflows**.
+150. **Export models using `joblib`, `pickle`, or ONNX responsibly**.

@@ -1,0 +1,62 @@
+---
+description: 
+globs: *.py,*.ipynb
+alwaysApply: false
+---
+tags: development
+priority: 1
+version: 1.0.0
+
+# General Coding Guidelines
+
+<purpose>
+Follow all of these guidelines when programming!
+</purpose>
+
+## 1. Code Style & Best Practices
+
+### 1.1 Naming & Clarity
+
+1. **Name variables and functions clearly**—favor clarity over brevity.
+2. **Use short, single-purpose functions** with expressive names—limit cognitive load.
+3. **Comment why, not what**—code should be self-explanatory.
+4. **Avoid cleverness—make intent obvious.**
+
+### 1.2 Formatting & Readability
+
+5. **Follow a consistent coding style** (PEP 8).
+6. **Use whitespace and formatting to aid readability.**
+7. **Avoid deeply nested logic**—use guard clauses.
+
+### 1.3 Code Structure
+
+8. **Keep code DRY** (Don't Repeat Yourself).
+9. **Extract repeated code into helpers.**
+11. **Group related logic and data together.**
+12. **Write modular code**—separate concerns into different files/modules.
+13. **Avoid global state**—prefer explicit parameter passing.
+
+### 1.4 Tooling & Workflow
+
+14. **Use version control** (e.g., Git) consistently.
+15. **Use meaningful commit messages.**
+16. **Don't ignore compiler/linter warnings.**
+17. **Write tests**—unit, integration, and edge cases.
+18. **Refactor often**—improve structure without changing behavior.
+19. **Refactor regularly to maintain clarity.**
+20. **Document APIs and public interfaces clearly.**
+
+### 1.5 Python-Specific Conventions
+
+21. **Use virtual environment** "checkmate" to manage dependencies.
+22. **Write idiomatic Python**—use list comprehensions, `with`, unpacking, etc.
+23. **Use `enumerate()` and `zip()` instead of manual indexing.**
+24. **Leverage Python's standard library**—it's powerful and well-tested.
+25. **Avoid mutable default arguments**—use `None` and assign inside.
+26. **Use `is` for `None`, not `==`.**
+27. **Prefer exceptions over return codes**—Pythonic error handling.
+28. **Catch specific exceptions**—not broad `except:` blocks.
+29. **Use type hints and `mypy` for static checking.**
+
+
+- for 

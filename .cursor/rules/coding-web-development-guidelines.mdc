@@ -1,0 +1,27 @@
+---
+description: USE WHEN developing a web-app in python
+globs: 
+alwaysApply: false
+---
+tags: development
+priority: 3
+version: 1.0.0
+
+# Python Web Development Guidelines
+
+<purpose>
+Follow all of these guidelines when programming a web-app in python!
+</purpose>
+
+**Web Development (Python):**
+
+151. **Use frameworks like Flask, FastAPI, or Django as needed**.
+152. **Keep views/routes slim—delegate logic to services or helpers**.
+153. **Validate inputs using `pydantic`, `marshmallow`, or forms**.
+154. **Use ORM efficiently—beware of N+1 queries**.
+155. **Sanitize and escape all user inputs/outputs**.
+156. **Use async frameworks (FastAPI, Starlette) for high concurrency**.
+157. **Configure proper logging and error handling**.
+158. **Write integration tests for endpoints and edge cases**.
+159. **Use `.env` for config—never hardcode secrets**.
+160. **Deploy with gunicorn/uvicorn, and reverse-proxy with nginx**.

@@ -1,0 +1,101 @@
+---
+description: USE WHEN deploying an app or machine learning model
+globs: 
+alwaysApply: false
+---
+tags: development
+priority: 2
+version: 1.0.0
+
+# Coding Guidelines: Deployment
+
+<purpose>
+Follow these guidelines when programming the final product for deployment
+</purpose>
+
+
+## 4. Deployment & MLOps
+
+### 4.1 Model Serving & Inference
+
+181. **Containerize models using Docker for portability**.
+
+182. **Serve models with FastAPI, Flask, or `torchserve`**.
+
+183. **Use asynchronous endpoints for high-throughput inference**.
+
+184. **Batch predictions to improve latency/throughput tradeoffs**.
+
+185. **Deploy on GPU instances if needed, but monitor utilization**.
+
+186. **Use model versioning and rollback strategies**.
+
+187. **Expose only minimal, necessary APIs—lock down inputs**.
+
+188. **Monitor latency, throughput, and prediction quality in prod**.
+
+189. **Use health checks and timeouts to catch stuck inferences**.
+
+190. **Separate pre/post-processing logic from the core model**.
+
+191. **Use prompt templates and chain-of-thought patterns** for stability.
+
+192. **Cache LLM responses where appropriate** to save cost.
+
+193. **Evaluate output determinism with `temperature=0`** when needed.
+
+194. **Use tools like LangChain or Haystack for orchestration**.
+
+195. **Sanitize and validate LLM inputs/outputs rigorously**.
+
+196. **Log prompts, responses, and errors for review**.
+
+197. **Guard against hallucinations and toxic outputs with filters**.
+
+198. **Use retrieval-augmented generation (RAG) for grounded answers**.
+
+199. **Tokenize and monitor costs—track usage tightly**.
+
+200. **Test edge prompts and stress cases like user adversarial input**.
+
+### 4.2 MLOps Pipelines & Monitoring
+
+231. **Use CI/CD for models just like software**—automate tests and builds.
+
+232. **Track everything**—data, code, parameters, metrics, artifacts.
+
+233. **Use ML experiment tracking tools** (e.g., MLflow, Weights & Biases).
+
+234. **Version models and datasets together**—enable reproducibility.
+
+235. **Separate dev, staging, and production environments**.
+
+236. **Automate retraining pipelines with orchestration tools** (e.g., Airflow, Kubeflow).
+
+237. **Use model registries** to manage versions and promote deployments.
+
+238. **Monitor model performance in production continuously**.
+
+239. **Detect and alert on data drift, concept drift, and skew**.
+
+240. **Roll back models safely** if metrics degrade in production.
+
+241. **Deploy using containers and orchestrators** (e.g., Docker, Kubernetes).
+
+242. **Decouple inference APIs from training code**.
+
+243. **Use feature stores** to unify online/offline features.
+
+244. **Test pipelines end-to-end with real data snapshots**.
+
+245. **Design for auditability—log predictions, inputs, metadata**.
+
+246. **Secure model endpoints and restrict access**.
+
+247. **Use shadow deployment or canary releases to test new models**.
+
+248. **Measure latency, throughput, failure rates** for infra health.
+
+249. **Keep humans in the loop for critical decisions**.
+
+250. **Keep infra modular—swap tools/libraries without rewrites**.

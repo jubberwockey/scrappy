@@ -1,0 +1,28 @@
+---
+description: USE WHEN programming async in python
+globs: 
+alwaysApply: false
+---
+tags: development
+priority: 3
+version: 1.0.0
+
+# Python Async Coding Guidelines
+
+<purpose>
+Follow all of these guidelines when programming async in python!
+</purpose>
+
+
+**Async Python:**
+
+131. **Use `async`/`await` for non-blocking I/O**.
+132. **Never block in async code**—use `await`, not `time.sleep()`.
+133. **Use `asyncio.create_task()` for background tasks**.
+134. **Limit concurrency with `asyncio.Semaphore` or queues**.
+135. **Handle exceptions in async tasks explicitly**.
+136. **Avoid mixing sync and async heavily**—keep layers clean.
+137. **Use `aiohttp`, `aiomysql`, etc. for async-friendly libraries**.
+138. **Benchmark async behavior with real workloads**.
+139. **Test async code with `pytest-asyncio`**.
+140. **Keep coroutines short and focused**.

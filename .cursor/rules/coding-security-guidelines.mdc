@@ -1,0 +1,27 @@
+---
+description: USE WHEN optimizing for security
+globs: 
+alwaysApply: false
+---
+tags: development
+priority: 2
+version: 1.0.0
+
+# Coding Guidelines for Security
+
+<purpose>
+Follow these guidelines when optimizing for security
+</purpose>
+
+### 2.5 Security
+
+81. **Validate all input**—never trust external data.
+82. **Escape output to prevent injection attacks** (e.g., XSS, SQLi).
+83. **Use secure defaults**—fail closed, least privilege.
+84. **Store secrets securely**—never hardcode them.
+85. **Keep dependencies up to date**—patch known vulnerabilities.
+86. **Use HTTPS everywhere**—encrypt all data in transit.
+87. **Hash passwords with strong algorithms** (e.g., bcrypt, Argon2).
+88. **Implement proper authentication and authorization**.
+89. **Log and monitor suspicious activity**.
+90. **Review code for security vulnerabilities regularly**.
