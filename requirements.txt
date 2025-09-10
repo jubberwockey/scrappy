@@ -6,3 +6,4 @@ dirtyjson
 plotly
 matplotlib
 seaborn
+scipy

@@ -4,6 +4,7 @@ import dirtyjson
 import re
 import pandas as pd
 import numpy as np
+import scipy
 import datetime
 from typing import List, Optional, Dict, Any, Union, Tuple
 import plotly.express as px
@@ -11,6 +12,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from IPython.display import display
 import logging
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from .config import ScrapingConfig
 
@@ -103,20 +106,23 @@ class DataScraper:
     
     def download_funds_overview(self, filter_ids: Optional[List[int]] = None, 
                              etf: bool = False, benchmark: bool = False, 
-                             limit: int = None) -> pd.DataFrame:
+                             limit: int = None, option_str: Optional[str] = None) -> pd.DataFrame:
         """
         Download funds overview data from the Onvista website.
 
-        This function retrieves a data for funds based on specified filter criteria, 
+        This function retrieves fund data based on specified filter criteria, 
         including sustainability categories, ETF status, and benchmark inclusion. 
         It pre-filters to investments with Ausgabeaufschlag < 7% and min investment < 10k.
+        For limit>1000, it uses volatility-based splitting for better distribution.
 
-        Parameters:
+        Parameters
         ----------
         filter_ids : list of int, optional
             A list of filter IDs (onvista "Thema" filter) to specify categories of funds to download. 
-            If None, defaults to the predefined filter IDs (sustainability, alternative energy, ecology).
-
+            If None, defaults to ESG/sustainability funds. Can also use string shortcuts:
+            - 'esg': Sustainability, Alternative Energy, Ecology funds
+            - 'renten': Bond/Fixed Income funds
+            
         etf : bool, default=False
             If True, only includes funds that are exchange-traded funds (ETFs).
 
@@ -125,37 +131,60 @@ class DataScraper:
 
         limit : int, optional
             The maximum number of funds to return. If None, defaults to 100.
-            If >1000, splits requests by Ausgabeaufschlag (not ideal).
+            If >1000, splits requests by volatility ranges for better distribution.
+            
+        option_str : str, optional
+            Freetext string to add additional query parameters to the API request.
+            Example: "morningstarSustainabilityRating=5"
 
-        Returns:
+        Returns
         -------
         pandas.DataFrame
-            A DataFrame containing the downloaded funds data, including relevant columns 
-            such as fund names, ISINs, TER (Total Expense Ratio), and other performance metrics.
-        """
-        if filter_ids is None:
-            filter_ids = self.config.DEFAULT_FILTER_IDS
-        if limit is None:
-            limit = self.config.DEFAULT_LIMIT
+            A DataFrame containing the downloaded funds data
             
+        Raises
+        ------
+        DataNotFoundError
+            If no fund data could be retrieved from the API
+        NetworkError, APILimitExceededError
+            If there are issues with the API connection or rate limits
+        """
+        if isinstance(filter_ids, str):
+            if filter_ids in self.config.FILTER_CATEGORIES:
+                category_type = filter_ids
+                filter_ids = self.config.FILTER_CATEGORIES[filter_ids]
+            else:
+                raise ValueError(f"Unknown filter category '{filter_ids}'. Available: {list(self.config.FILTER_CATEGORIES.keys())}")
+        else:
+            # Determine category type based on filter_ids
+            category_type = None
+            # for cat_name, cat_ids in self.config.FILTER_CATEGORIES.items():
+            #     if set(filter_ids) == set(cat_ids):
+            #         category_type = cat_name
+            #         break
+        
+        if limit is None:
+            limit = self.config.MAX_API_LIMIT
+            
+        # params template
         params = {
             'application': 'WEBSITE',
             'device': 'DESKTOP',
             'order': 'DESC',
             'page': '0',
-            'perPage': '100',
+            'perPage': '1000',
             'queryParameters': '',
             'sort': 'performancePct1Y',
         }
         
         # Use configuration for column mappings
         cols = list(self.config.ONVISTA_COLUMNS.keys())
-        colnames = list(self.config.ONVISTA_COLUMNS.values())
         
         if benchmark:
-            # ignore other options if benchmark=True
+            # Ignore other options if benchmark=True
             options = ['isExchangeTraded=true', 'idInstrumentBenchmark=16204403,4646272,83327,376508,376391,376376',
                        'idTypeReplication=2']
+            category_type = 'benchmark'
         else:
             options = []
             if etf:
@@ -168,15 +197,43 @@ class DataScraper:
                     filter_ids = ','.join(map(str, filter_ids))
                 options.append('idInvestmentFocus=' + filter_ids)
             
+            # Pre-filtering:
             options.append('minInitialInvestmentRange=0;10000')
+            options.append('maxPctInitialFeeRange=0;7')
         
-        # Handle API limit of 1000 results: introduce additional filters
+        # Add additional options if provided
+        if option_str:
+            options.append(option_str)
+        
+        # Handle API limit: use volatility-based splitting for better distribution
         if limit > self.config.MAX_API_LIMIT:
+            def generate_intervals(array, N, spacing_fun=np.linspace):
+                """Generate N intervals between start and end of array.
+
+                array: list of start and end points
+                N: number of intervals
+                spacing_fun: e.g. np.linspace or np.geomspace
+                returns: list of intervals
+                """
+                start, end = array
+                points = spacing_fun(start+1, end+1, N+1)-1 # exclude 0 for geomspace
+                intervals = [[round(float(points[i]), 1), round(float(points[i+1]), 1)] for i in range(N)]
+                return intervals
+            
+            def power_spacing_fun(start, end, num, power=.5):
+                return np.power(np.linspace(*np.power([start,end], power), num), 1./power)
+
+            
             params['perPage'] = self.config.MAX_API_LIMIT
-            split_results_by = ['maxPctInitialFeeRange=0;4.9', 'maxPctInitialFeeRange=4.9;7']
+
+            num_buckets = int(np.ceil(limit / self.config.MAX_API_LIMIT))
+            volatility_range = [0,50]
+            intervals = generate_intervals(volatility_range, num_buckets, spacing_fun=power_spacing_fun)
+            split_results_by = [f'risk.1Y.volatility&volatility1YRange={min};{max}' for min, max in intervals]
+            logger.info(f"Splitting large request ({limit} funds) into {num_buckets} volatility ranges")
         else:
             params['perPage'] = str(limit)
-            split_results_by = ['maxPctInitialFeeRange=0;7']
+            split_results_by = ['risk.1Y.volatility&volatility1YRange=0;50']
         
         dfs = []
         for split in split_results_by:
@@ -205,11 +262,7 @@ class DataScraper:
                     for opt_col in opt_cols:
                         df[opt_col] = np.nan
                 
-                # Map column names using configuration
-                # column_mapping = {col: self.config.ONVISTA_COLUMNS[col] for col in available_cols}
-                # df.rename(columns=column_mapping, inplace=True)
                 df.rename(columns=self.config.ONVISTA_COLUMNS, inplace=True)
-                
                 df.set_index('isin', inplace=True)
                 dfs.append(df)
                 
@@ -223,7 +276,13 @@ class DataScraper:
             df = pd.concat(dfs, axis=0)
             # Remove duplicates by index
             df = df[~df.index.duplicated(keep='last')]
-            logger.info(f"Successfully downloaded {len(df)} funds")
+            
+            # Add category columns based on filter type
+            df['is_esg'] = category_type == 'esg'
+            df['is_renten'] = category_type == 'renten'  
+            df['is_benchmark'] = category_type == 'benchmark'
+            
+            logger.info(f"Successfully downloaded {len(df)} funds (category: {category_type or 'mixed'})")
             return df
         else:
             raise DataNotFoundError("No fund data could be retrieved")
@@ -561,40 +620,81 @@ class FundsDataManager:
     def extract_performance(self, isins: Optional[List[str]] = None, 
                            columns: List[str] = ['performance', 'risk'], 
                            transpose: bool = False, dropna: bool = False) -> pd.DataFrame:
-        """Extract and format performance data."""
-        merge = len(columns) == 2
-        
+        """Extract and format performance data"""
+        base_funds = self.funds_overview
         if isins is None:
-            isins = list(self.filter_funds().index)
+            isins = list(base_funds.index)
+
         
-        found_isins = []
-        dfs = []
+        required_cols = [col for col in columns if col in base_funds.columns]
+        if not required_cols:
+            logger.warning(f"None of the requested columns {columns} found in funds data")
+            return pd.DataFrame()
+        
+        funds_subset = base_funds.loc[isins, required_cols]
+        
+        valid_data = []
+        valid_isins = []
         
         for isin in isins:
-            fund = self.filter_funds(isins=[isin])
-            if len(fund) > 0:
-                subdfs = [pd.DataFrame(fund.loc[isin, c]).set_index('timeSpan') for c in columns]
-                if merge:
-                    subdfs[1].rename({'nameTimeSpan': 'nameTimeSpan1'}, axis=1, inplace=True)
-                    df = pd.concat(subdfs, axis=1, copy=False)
-                    df['nameTimeSpan'] = df['nameTimeSpan'].fillna(subdfs[1]['nameTimeSpan1'])
-                    df.drop('nameTimeSpan1', axis=1, inplace=True)
-                else:
-                    df = subdfs[0]
+            try:
+                fund_row = funds_subset.loc[isin]
+                
+                if any(not isinstance(fund_row[col], list) or not fund_row[col] 
+                       for col in required_cols):
+                    continue
+                
+                subdf_data = {}
+                all_timespans = set()
+                
+                # First pass: collect all unique timeSpans and build data structure
+                for col in required_cols:
+                    col_data = fund_row[col]
+                    for item in col_data:
+                        if isinstance(item, dict) and 'timeSpan' in item:
+                            timespan = item['timeSpan']
+                            all_timespans.add(timespan)
+                            if timespan not in subdf_data:
+                                subdf_data[timespan] = {}
+                            
+                            for key, value in item.items():
+                                if key != 'timeSpan':
+                                    subdf_data[timespan][key] = value
+                
+                if not subdf_data:
+                    continue
+                
+                df = pd.DataFrame.from_dict(subdf_data, orient='index')
+                df.index.name = 'timeSpan'
+                
+                if len(required_cols) == 2 and 'nameTimeSpan' in df.columns:
+                    df['nameTimeSpan'] = df['nameTimeSpan'].ffill().bfill()
                 
                 if transpose:
                     df = df.T
                 
-                found_isins.append(isin)
-                dfs.append(df)
+                valid_data.append(df)
+                valid_isins.append(isin)
+                
+            except (KeyError, IndexError, TypeError) as e:
+                logger.debug(f"Skipping ISIN {isin} due to data format issue: {e}")
+                continue
         
-        if dfs:
-            self.performance = pd.concat(dfs, keys=found_isins)
-            self.performance.index.rename('isins', level=0, inplace=True)
+        if not valid_data:
+            return pd.DataFrame()
+        
+        try:
+            result = pd.concat(valid_data, keys=valid_isins, names=['isins', 'timeSpan'])
+            
             if dropna:
-                self.performance.dropna(thresh=2, inplace=True)
-            return self.performance
-        else:
+                result = result.dropna(thresh=2)
+            
+            # Cache the result for potential reuse
+            self.performance = result
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error concatenating performance data: {e}")
             return pd.DataFrame()
     
     def select_timeseries(self, columns: List[str]) -> pd.DataFrame:
@@ -910,7 +1010,7 @@ class FundsAnalyzer:
         if not columns_to_include:
             return pd.DataFrame()
         
-        logger.info(f"Ranked {len(result_df)} funds using criteria: {list(criteria.keys())}")
+        logger.info(f"Ranked {len(result_df)} funds using criteria: {criteria}")
         return result_df[columns_to_include]
         
     def rank_funds_by_strategy(self, strategy: str, timespan: str = '3Y', 
@@ -951,7 +1051,7 @@ class FundsAnalyzer:
         
         # Get strategy criteria
         criteria = self.strategies[strategy].copy()
-        logger.info(f"Using {strategy} strategy for ranking")
+        logger.info(f"Using ranking strategy: {strategy}")
         
         return self.rank_funds(
             criteria=criteria,
@@ -1019,7 +1119,7 @@ class FundsVisualizer:
     def plot_correlations(self, isins: Optional[List[str]] = None, 
                          min_periods: int = 30, method: str = 'pearson',
                          title: str = 'Fund Return Correlations'):
-        """Plot correlation matrix of fund returns."""
+        """Plot correlation matrix clustermap of fund returns using seaborn."""
         if isins is not None:
             ts_data = self.data_manager.select_timeseries(isins)
         else:
@@ -1035,28 +1135,23 @@ class FundsVisualizer:
         # Compute correlation matrix
         corr_matrix = returns.corr(method=method, min_periods=min_periods)
         
-        # Create heatmap
-        fig = go.Figure(data=go.Heatmap(
-            z=corr_matrix.values,
-            x=corr_matrix.columns,
-            y=corr_matrix.index,
-            colorscale='RdBu',
-            zmid=0,
-            text=corr_matrix.round(2).values,
-            texttemplate="%{text}",
-            textfont={"size": 10},
-            hoverongaps=False
-        ))
-        
-        fig.update_layout(
-            title=title,
-            xaxis_title="Funds",
-            yaxis_title="Funds",
-            width=800,
-            height=600
+        # Create clustermap
+        plt.figure(figsize=(12, 10))
+        g = sns.clustermap(
+            corr_matrix,
+            cmap='RdBu_r',
+            center=0,
+            annot=True,
+            fmt='.2f',
+            square=True,
+            linewidths=0.5,
+            cbar_kws={"shrink": .8}
         )
         
-        fig.show()
+        # Set title
+        g.figure.suptitle(title, y=1.02)
+        
+        plt.show()
         return corr_matrix
     
     def plot_risk_return(self, timespan: str = '1Y', 

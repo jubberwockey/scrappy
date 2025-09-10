@@ -32,31 +32,64 @@ def basic_usage_example():
     )
     
     # 1. Download funds overview data (sustainable funds)
-    print("1. Downloading sustainable funds data...")
+    print("1. Downloading ESG/sustainable funds data...")
     try:
-        funds_data = scrappy.download_funds_overview(
-            filter_ids=[5634, 5703, 5582],  # Sustainability, Alternative Energy, Ecology
+        # Using category shortcut
+        esg_funds = scrappy.download_funds_overview(
+            filter_ids='esg',  # Use ESG category shortcut
             limit=50
         )
-        print(f"Downloaded {len(funds_data)} funds")
-        print(funds_data.head())
+        print(f"Downloaded {len(esg_funds)} ESG funds")
+        print(f"ESG column values: {esg_funds['esg'].value_counts()}")
+        print(esg_funds.head())
+        
+        # Download bond/fixed income funds
+        print("\n1b. Downloading bond/fixed income funds...")
+        renten_funds = scrappy.download_funds_overview(
+            filter_ids='renten',  # Use renten category shortcut
+            limit=30
+        )
+        print(f"Downloaded {len(renten_funds)} bond funds")
+        print(f"Renten column values: {renten_funds['renten'].value_counts()}")
+        
+        # Download with additional options
+        print("\n1c. Downloading large-volume ESG funds...")
+        large_esg_funds = scrappy.download_funds_overview(
+            filter_ids='esg',
+            limit=25,
+            additional_options="minVolumeRange=100000000;999999999999"  # Min 100M volume
+        )
+        print(f"Downloaded {len(large_esg_funds)} large ESG funds")
+        
+        # Combine all funds
+        all_funds = pd.concat([esg_funds, renten_funds], axis=0)
+        all_funds = all_funds[~all_funds.index.duplicated(keep='last')]
+        scrappy.data_manager.add_funds_data(all_funds)
+        
     except Exception as e:
         print(f"Error downloading data: {e}")
         # For demo purposes, create sample data
         funds_data = create_sample_funds_data()
         scrappy.data_manager.add_funds_data(funds_data)
     
-    # 2. Search for specific funds
-    print("\n2. Searching for ESG funds...")
-    esg_funds = scrappy.search_funds_by_pattern('ESG|Sustainable|Green', column='name')
-    print(f"Found {len(esg_funds)} ESG funds")
+    # 2. Search for specific funds using new filter capabilities
+    print("\n2. Searching for ESG funds using filter_funds...")
+    esg_filter_funds = scrappy.filter_funds({
+        'esg': True,
+        'TER': '<0.8'
+    })
+    print(f"Found {len(esg_filter_funds)} low-cost ESG funds")
     
-    # 3. Filter funds by criteria
-    print("\n3. Filtering funds by low fees...")
-    low_fee_funds = scrappy.filter_funds(
-        esg_funds.index[esg_funds['TER'] < 0.5].tolist()
-    )
-    print(f"Found {len(low_fee_funds)} low-fee funds")
+    # 3. Filter funds by category and other criteria
+    print("\n3. Filtering bond funds with low risk...")
+    try:
+        bond_funds = scrappy.filter_funds({
+            'renten': True,
+            'name': 'regex:Bond|Anleihe|Renten'
+        })
+        print(f"Found {len(bond_funds)} bond funds")
+    except Exception as e:
+        print(f"Could not filter bond funds: {e}")
     
     # 4. Extract performance metrics
     print("\n4. Extracting performance metrics...")
@@ -64,18 +97,22 @@ def basic_usage_example():
     if not performance_data.empty:
         print(performance_data.head())
     
-    # 5. Identify top performers
-    print("\n5. Identifying top performers...")
+    # 5. Demonstrate category-based analysis
+    print("\n5. Category-based fund analysis...")
     try:
-        top_funds = scrappy.filter_top_performers(
-            by='sharpeRatio', 
-            timespan='1Y', 
-            limit=10
-        )
-        print(f"Top 10 funds by Sharpe ratio:")
-        print(top_funds[['name', 'TER']].head())
+        funds_overview = scrappy.funds_overview
+        if not funds_overview.empty and 'esg' in funds_overview.columns:
+            print(f"ESG funds: {funds_overview['esg'].sum()}")
+            print(f"Bond funds: {funds_overview['renten'].sum()}")
+            print(f"Benchmark funds: {funds_overview['benchmark'].sum()}")
+            
+            # Compare average TER by category
+            if 'TER' in funds_overview.columns:
+                esg_ter = funds_overview[funds_overview['esg']]['TER'].mean()
+                renten_ter = funds_overview[funds_overview['renten']]['TER'].mean()
+                print(f"Average TER - ESG: {esg_ter:.3f}%, Bonds: {renten_ter:.3f}%")
     except Exception as e:
-        print(f"Could not identify top performers: {e}")
+        print(f"Could not perform category analysis: {e}")
     
     return scrappy
 
@@ -155,78 +192,114 @@ def advanced_analysis_example(scrappy):
     """Advanced analysis examples."""
     print("\n=== Advanced Analysis Examples ===")
     
-    # 1. Integrate broker availability data
-    print("1. Integrating broker availability data...")
+    # 1. Demonstrate large download with volatility-based splitting
+    print("1. Large download with volatility-based splitting...")
+    try:
+        # This should trigger volatility-based splitting
+        large_dataset = scrappy.download_funds_overview(
+            filter_ids='esg',
+            limit=2500,  # This will trigger splitting
+            additional_options="minVolumeRange=10000000;999999999999"  # Min 10M volume
+        )
+        print(f"Downloaded {len(large_dataset)} funds with volatility-based splitting")
+        
+        # Analyze volatility distribution
+        if 'risk' in large_dataset.columns:
+            print("Volatility distribution analysis would go here...")
+        
+    except Exception as e:
+        print(f"Large download example failed: {e}")
+    
+    # 2. Integrate broker availability data
+    print("\n2. Integrating broker availability data...")
     try:
         scrappy.join_finanzen_zero_data('data/downloadable-instruments.csv')
         print("Broker data integrated successfully")
         
-        # Show funds available with zero fees
-        zero_fee_funds = scrappy.filter_funds(
-            scrappy.funds_overview[scrappy.funds_overview.get('finanzen_zero', False)].index.tolist()
-        )
-        print(f"Found {len(zero_fee_funds)} funds with zero broker fees")
+        # Show funds available with zero fees by category
+        funds_overview = scrappy.funds_overview
+        if not funds_overview.empty and 'finanzen_zero' in funds_overview.columns:
+            esg_zero_fee = scrappy.filter_funds({
+                'esg': True,
+                'finanzen_zero': True
+            })
+            print(f"ESG funds with zero broker fees: {len(esg_zero_fee)}")
+            
+            renten_zero_fee = scrappy.filter_funds({
+                'renten': True, 
+                'finanzen_zero': True
+            })
+            print(f"Bond funds with zero broker fees: {len(renten_zero_fee)}")
+            
     except Exception as e:
         print(f"Error integrating broker data: {e}")
     
-    # 2. Custom analysis: Find best sustainable funds with low fees
-    print("\n2. Finding best sustainable funds with low fees...")
+    # 3. Custom analysis: Compare categories
+    print("\n3. Cross-category fund analysis...")
     try:
-        # Filter for sustainable funds with low TER and available at zero fees
-        sustainable_funds = scrappy.search_funds_by_pattern('Sustainable|ESG|Green', column='name')
+        funds_overview = scrappy.funds_overview
         
-        if not sustainable_funds.empty:
-            # Apply multiple criteria
-            criteria = (
-                (sustainable_funds['TER'] < 0.75) &  # Low fees
-                (sustainable_funds.get('finanzen_zero', False))  # Available at zero broker fees
+        if not funds_overview.empty:
+            # Category-based filtering and comparison
+            categories = ['esg', 'renten', 'benchmark']
+            category_stats = {}
+            
+            for category in categories:
+                if category in funds_overview.columns:
+                    cat_funds = funds_overview[funds_overview[category] == True]
+                    if not cat_funds.empty and 'TER' in cat_funds.columns:
+                        category_stats[category] = {
+                            'count': len(cat_funds),
+                            'avg_ter': cat_funds['TER'].mean(),
+                            'median_ter': cat_funds['TER'].median(),
+                            'min_ter': cat_funds['TER'].min(),
+                            'max_ter': cat_funds['TER'].max()
+                        }
+            
+            print("Category comparison:")
+            for cat, stats in category_stats.items():
+                print(f"{cat.upper()}: {stats['count']} funds, "
+                      f"TER avg: {stats['avg_ter']:.3f}%, "
+                      f"range: {stats['min_ter']:.3f}%-{stats['max_ter']:.3f}%")
+                      
+            # Find funds that might be in multiple categories
+            if 'esg' in funds_overview.columns and 'renten' in funds_overview.columns:
+                esg_bonds = funds_overview[
+                    (funds_overview['esg'] == True) & 
+                    (funds_overview['renten'] == True)
+                ]
+                print(f"Funds that are both ESG and bonds: {len(esg_bonds)}")
+    
+    except Exception as e:
+        print(f"Error in cross-category analysis: {e}")
+    
+    # 4. Performance ranking across different categories
+    print("\n4. Category-based performance analysis...")
+    try:
+        # Rank ESG funds
+        esg_funds = scrappy.filter_funds({'esg': True})
+        if not esg_funds.empty:
+            esg_ranking = scrappy.rank_funds(
+                isins=list(esg_funds.index[:50]),  # Limit to first 50 for demo
+                timespan='1Y',
+                limit=5
             )
-            
-            best_sustainable = sustainable_funds[criteria]
-            print(f"Found {len(best_sustainable)} best sustainable funds:")
-            print(best_sustainable[['name', 'TER', 'investment_focus']].head())
-        else:
-            print("No sustainable funds found in dataset")
-    except Exception as e:
-        print(f"Error in custom analysis: {e}")
-    
-    # 3. Performance ranking across different timeframes
-    print("\n3. Multi-timeframe performance analysis...")
-    try:
-        timeframes = ['1Y', '3Y', '5Y']
-        performance_summary = {}
+            print("Top 5 ESG funds:")
+            print(esg_ranking)
         
-        for timeframe in timeframes:
-            try:
-                top_performers = scrappy.filter_top_performers(
-                    by='sharpeRatio',
-                    timespan=timeframe,
-                    limit=5
-                )
-                performance_summary[timeframe] = top_performers.index.tolist()
-                print(f"Top 5 funds ({timeframe}): {len(top_performers)} found")
-            except Exception as e:
-                print(f"No data for {timeframe}: {e}")
-        
-        # Find funds that appear in multiple timeframes (consistent performers)
-        if len(performance_summary) > 1:
-            all_funds = set()
-            for funds_list in performance_summary.values():
-                all_funds.update(funds_list)
-            
-            consistent_performers = []
-            for fund in all_funds:
-                appearances = sum(1 for funds_list in performance_summary.values() if fund in funds_list)
-                if appearances >= 2:
-                    consistent_performers.append(fund)
-            
-            print(f"Consistent performers across timeframes: {len(consistent_performers)}")
-            if consistent_performers:
-                consistent_funds = scrappy.filter_funds(consistent_performers)
-                print(consistent_funds[['name', 'TER']].head())
+        # Rank bond funds  
+        bond_funds = scrappy.filter_funds({'renten': True})
+        if not bond_funds.empty:
+            bond_ranking = scrappy.rank_funds_by_strategy(
+                strategy='conservative',  # Conservative strategy for bonds
+                isins=list(bond_funds.index[:50]),
+                limit=5
+            )
+            print("\nTop 5 bond funds (conservative strategy):")
+            print(bond_ranking)
     
     except Exception as e:
-        print(f"Error in multi-timeframe analysis: {e}")
+        print(f"Error in category-based performance analysis: {e}")
 
 
 def data_management_example(scrappy):

@@ -2,8 +2,14 @@
 class ScrapingConfig:
     """Configuration settings for the scraping operations."""
     
-    # Default filter IDs for fund categories
-    DEFAULT_FILTER_IDS = [5634, 5703, 5582]  # Sustainability, Alternative Energy, Ecology
+    # Filter categories for fund types
+    FILTER_CATEGORIES = {
+        'esg': [5634, 5703, 5582],  # Sustainability, Alternative Energy, Ecology
+        'renten': [5634, 5532, 5645, 5620, 5670, 5560, 5646, 5647, 5531, 5672,
+                  5673, 5674, 5676, 5677, 5648, 5643, 5534, 5644, 5570, 5678,
+                  5679, 5680, 5535, 5681, 5581, 5625, 5651, 5654, 5622, 5652,
+                  5557, 5684, 5685, 5653, 5558]  # Bond/Fixed Income funds
+    }
     
     # API endpoints
     API_URLS = {
@@ -13,8 +19,8 @@ class ScrapingConfig:
     
     # Default parameters
     DEFAULT_BATCH_SIZE = 100
-    DEFAULT_LIMIT = 100
     MAX_API_LIMIT = 1000 # uses paging for more than 1000 results
+
     
     # Column mappings for onvista API
     ONVISTA_COLUMNS = {
@@ -46,7 +52,8 @@ class ScrapingConfig:
         'fundsBaseData.maxPctDistributionFee': 'distribution_fee',
         'fundsBaseData.maxPctRedemptionFee': 'redemption_fee',
         'fundsBaseData.minInitialInvestment': 'min_initial_investment',
-        'fundsBaseData.minFollowupInvestment': 'min_followup_investment'
+        'fundsBaseData.minFollowupInvestment': 'min_followup_investment',
+        'fundsEvaluation.morningstarSustainabilityRating': 'sustainability_rating',
     }
     
     # Default benchmark ISINs
