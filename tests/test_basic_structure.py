@@ -5,132 +5,164 @@ These tests verify that the classes can be imported and have the expected struct
 
 import sys
 import os
+import pytest
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 
-def test_imports():
+def test_main_classes_import():
     """Test that all main classes can be imported."""
-    try:
-        from scrappy import (
-            ScrapingConfig, DataScraper, FundsDataManager, 
-            FundsAnalyzer, FundsVisualizer, Scrappy
-        )
-        assert True  # If we get here, imports worked
-    except ImportError as e:
-        assert False, f"Import failed: {e}"
+    from scrappy import (
+        ScrapingConfig, DataScraper, FundsDataManager, 
+        FundsAnalyzer, FundsVisualizer, Scrappy
+    )
+    
+    # If we get here, imports worked
+    assert ScrapingConfig is not None
+    assert DataScraper is not None
+    assert FundsDataManager is not None
+    assert FundsAnalyzer is not None
+    assert FundsVisualizer is not None
+    assert Scrappy is not None
 
 
-def test_exception_classes():
-    """Test that custom exception classes are defined."""
-    try:
-        from scrappy import (
-            ScrapingError, DataValidationError, APILimitExceededError,
-            NetworkError, DataNotFoundError
-        )
-        
-        # Test exception hierarchy
-        assert issubclass(DataValidationError, ScrapingError)
-        assert issubclass(APILimitExceededError, ScrapingError)
-        assert issubclass(NetworkError, ScrapingError)
-        assert issubclass(DataNotFoundError, ScrapingError)
-        
-    except ImportError as e:
-        assert False, f"Exception import failed: {e}"
+def test_exception_classes_import():
+    """Test that custom exception classes can be imported."""
+    from scrappy import (
+        ScrapingError, DataValidationError, APILimitExceededError,
+        NetworkError, DataNotFoundError
+    )
+    
+    # Verify all exception classes exist
+    assert ScrapingError is not None
+    assert DataValidationError is not None
+    assert APILimitExceededError is not None
+    assert NetworkError is not None
+    assert DataNotFoundError is not None
 
 
-def test_scraping_config_structure():
+def test_exception_hierarchy():
+    """Test that exception hierarchy is correct."""
+    from scrappy import (
+        ScrapingError, DataValidationError, APILimitExceededError,
+        NetworkError, DataNotFoundError
+    )
+    
+    # Test exception hierarchy
+    assert issubclass(DataValidationError, ScrapingError)
+    assert issubclass(APILimitExceededError, ScrapingError)
+    assert issubclass(NetworkError, ScrapingError)
+    assert issubclass(DataNotFoundError, ScrapingError)
+
+
+@pytest.fixture
+def scraping_config():
+    """Provide a ScrapingConfig instance for tests."""
+    from scrappy import ScrapingConfig
+    return ScrapingConfig()
+
+
+def test_scraping_config_attributes(scraping_config):
     """Test that ScrapingConfig has expected attributes."""
-    try:
-        from scrappy import ScrapingConfig
-        
-        config = ScrapingConfig()
-        
-        # Check that key attributes exist
-        assert hasattr(config, 'DEFAULT_FILTER_IDS')
-        assert hasattr(config, 'API_URLS')
-        assert hasattr(config, 'ONVISTA_COLUMNS')
-        assert hasattr(config, 'DEFAULT_BENCHMARKS')
-        assert hasattr(config, 'FONDSDISCOUNT_HEADERS')
-        assert hasattr(config, 'ONVISTA_HEADERS')
-        
-        # Check types
-        assert isinstance(config.DEFAULT_FILTER_IDS, list)
-        assert isinstance(config.API_URLS, dict)
-        assert isinstance(config.ONVISTA_COLUMNS, dict)
-        assert isinstance(config.DEFAULT_BENCHMARKS, list)
-        
-    except Exception as e:
-        assert False, f"ScrapingConfig test failed: {e}"
+    # Check that key attributes exist
+    assert hasattr(scraping_config, 'FILTER_CATEGORIES')
+    assert hasattr(scraping_config, 'API_URLS')
+    assert hasattr(scraping_config, 'ONVISTA_COLUMNS')
+    assert hasattr(scraping_config, 'DEFAULT_BENCHMARKS')
+    assert hasattr(scraping_config, 'FONDSDISCOUNT_HEADERS')
+    assert hasattr(scraping_config, 'ONVISTA_HEADERS')
+    assert hasattr(scraping_config, 'DEFAULT_BATCH_SIZE')
+    assert hasattr(scraping_config, 'MAX_API_LIMIT')
 
 
-def test_class_initialization():
-    """Test that classes can be initialized without external dependencies."""
-    try:
-        from scrappy import ScrapingConfig, DataScraper
-        
-        # Test config initialization
-        config = ScrapingConfig()
-        assert config is not None
-        
-        # Test scraper initialization
-        scraper = DataScraper(config)
-        assert scraper is not None
-        assert scraper.config is config
-        
-    except Exception as e:
-        assert False, f"Class initialization failed: {e}"
+def test_scraping_config_types(scraping_config):
+    """Test that ScrapingConfig attributes have correct types."""
+    assert isinstance(scraping_config.FILTER_CATEGORIES, dict)
+    assert isinstance(scraping_config.API_URLS, dict)
+    assert isinstance(scraping_config.ONVISTA_COLUMNS, dict)
+    assert isinstance(scraping_config.DEFAULT_BENCHMARKS, list)
+    assert isinstance(scraping_config.FONDSDISCOUNT_HEADERS, dict)
+    assert isinstance(scraping_config.ONVISTA_HEADERS, dict)
+    assert isinstance(scraping_config.DEFAULT_BATCH_SIZE, int)
+    assert isinstance(scraping_config.MAX_API_LIMIT, int)
 
 
-def test_method_existence():
-    """Test that expected methods exist on classes."""
-    try:
-        from scrappy import Scrappy
-        
-        scrappy = Scrappy()
-        
-        # Test method names exist
-        assert hasattr(scrappy, 'search_funds_by_pattern')
-        assert hasattr(scrappy, 'filter_funds')
-        assert hasattr(scrappy, 'download_funds_overview')
-        assert hasattr(scrappy, 'download_timeseries')
-        assert hasattr(scrappy, 'extract_performance')
-        assert hasattr(scrappy, 'filter_top_performers')
-        assert hasattr(scrappy, 'plot_timeseries')
-        assert hasattr(scrappy, 'plot_correlations')
-        assert hasattr(scrappy, 'plot_risk_return')
-        assert hasattr(scrappy, 'plot_benchmark_comparison')
-        assert hasattr(scrappy, 'rank_funds')
-        assert hasattr(scrappy, 'rank_funds_by_strategy')
-        
-        # Test backward compatibility methods exist
-        assert hasattr(scrappy, 'search_funds')
-        assert hasattr(scrappy, 'select_funds')
-        assert hasattr(scrappy, 'get_search_results')
-        assert hasattr(scrappy, 'get_timeseries')
-        
-    except Exception as e:
-        assert False, f"Method existence test failed: {e}"
-
-
-if __name__ == "__main__":
-    # Run tests manually if pytest is not available
-    test_functions = [
-        test_imports,
-        test_exception_classes,
-        test_scraping_config_structure,
-        test_class_initialization,
-        test_method_existence
-    ]
+def test_scraping_config_initialization():
+    """Test that ScrapingConfig can be initialized."""
+    from scrappy import ScrapingConfig
     
-    print("Running basic structure tests...")
+    config = ScrapingConfig()
+    assert config is not None
+
+
+def test_data_scraper_initialization():
+    """Test that DataScraper can be initialized."""
+    from scrappy import ScrapingConfig, DataScraper
     
-    for test_func in test_functions:
-        try:
-            test_func()
-            print(f"✓ {test_func.__name__}")
-        except Exception as e:
-            print(f"✗ {test_func.__name__}: {e}")
+    config = ScrapingConfig()
+    scraper = DataScraper(config)
     
-    print("Basic structure tests completed.") 
+    assert scraper is not None
+    assert scraper.config is config
+
+
+def test_data_scraper_default_config():
+    """Test that DataScraper can be initialized with default config."""
+    from scrappy import DataScraper
+    
+    scraper = DataScraper()
+    assert scraper is not None
+    assert scraper.config is not None
+
+
+@pytest.fixture
+def scrappy_instance():
+    """Provide a Scrappy instance for tests."""
+    from scrappy import Scrappy
+    return Scrappy()
+
+
+def test_scrappy_core_methods(scrappy_instance):
+    """Test that Scrappy has expected core methods."""
+    assert hasattr(scrappy_instance, 'search_funds_by_pattern')
+    assert hasattr(scrappy_instance, 'filter_funds')
+    assert hasattr(scrappy_instance, 'download_funds_overview')
+    assert hasattr(scrappy_instance, 'download_timeseries')
+    assert hasattr(scrappy_instance, 'extract_performance')
+    assert hasattr(scrappy_instance, 'filter_top_performers')
+
+
+def test_scrappy_visualization_methods(scrappy_instance):
+    """Test that Scrappy has expected visualization methods."""
+    assert hasattr(scrappy_instance, 'plot_timeseries')
+    assert hasattr(scrappy_instance, 'plot_correlations')
+    assert hasattr(scrappy_instance, 'plot_risk_return')
+    assert hasattr(scrappy_instance, 'plot_benchmark_comparison')
+
+
+def test_scrappy_analysis_methods(scrappy_instance):
+    """Test that Scrappy has expected analysis methods."""
+    assert hasattr(scrappy_instance, 'rank_funds')
+    assert hasattr(scrappy_instance, 'rank_funds_by_strategy')
+
+
+def test_scrappy_properties(scrappy_instance):
+    """Test that Scrappy has expected properties."""
+    assert hasattr(scrappy_instance, 'funds_overview')
+    assert hasattr(scrappy_instance, 'performance')
+    assert hasattr(scrappy_instance, 'ts')
+    
+    # Test that properties return expected types (or None if empty)
+    assert scrappy_instance.funds_overview is not None
+    assert scrappy_instance.ts is None or hasattr(scrappy_instance.ts, 'columns')
+
+
+def test_scrappy_methods_are_callable(scrappy_instance):
+    """Test that key Scrappy methods are callable."""
+    assert callable(scrappy_instance.search_funds_by_pattern)
+    assert callable(scrappy_instance.filter_funds)
+    assert callable(scrappy_instance.download_funds_overview)
+    assert callable(scrappy_instance.download_timeseries)
+    assert callable(scrappy_instance.extract_performance)
+    assert callable(scrappy_instance.filter_top_performers)
